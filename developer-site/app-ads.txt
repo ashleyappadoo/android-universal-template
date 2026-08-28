@@ -1,0 +1,3 @@
+# Replace pub-0000000000000000 with your real AdMob publisher ID.
+# Publish this file at https://YOUR-DEVELOPER-DOMAIN/app-ads.txt
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
