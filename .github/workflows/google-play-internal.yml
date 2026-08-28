@@ -1,0 +1,70 @@
+name: Publish Google Play Internal
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: Version name
+        required: true
+      version_code:
+        description: Monotonic integer version code
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish-internal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: google-play-internal
+
+    env:
+      ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+      ADMOB_BANNER_AD_UNIT_ID: ${{ vars.ADMOB_BANNER_AD_UNIT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Release-readiness policy gate
+        run: bash scripts/release-readiness.sh
+
+      - name: Recreate signing keystore
+        shell: bash
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/release.jks"
+
+      - name: Build AAB
+        env:
+          ORG_GRADLE_PROJECT_releaseKeystorePath: ${{ runner.temp }}/release.jks
+          ORG_GRADLE_PROJECT_releaseKeystorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_releaseKeyAlias: ${{ secrets.KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_releaseKeyPassword: ${{ secrets.KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_admobAppId: ${{ vars.ADMOB_APP_ID }}
+          ORG_GRADLE_PROJECT_admobBannerAdUnitId: ${{ vars.ADMOB_BANNER_AD_UNIT_ID }}
+          ORG_GRADLE_PROJECT_versionName: ${{ inputs.version_name }}
+          ORG_GRADLE_PROJECT_versionCode: ${{ inputs.version_code }}
+        run: gradle testReleaseUnitTest lintRelease bundleRelease --stacktrace
+
+      - name: Upload to Google Play internal track
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ vars.ANDROID_APPLICATION_ID }}
+          releaseFiles: app/build/outputs/bundle/release/*.aab
+          tracks: internal
+          status: completed
+          whatsNewDirectory: distribution/whatsnew
+          mappingFile: app/build/outputs/mapping/release/mapping.txt
