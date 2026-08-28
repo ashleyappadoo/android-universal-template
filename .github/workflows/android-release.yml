@@ -1,0 +1,89 @@
+name: Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: Version name (for example 1.2.0)
+        required: true
+      version_code:
+        description: Monotonic integer version code
+        required: true
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: release
+
+    env:
+      ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+      ADMOB_BANNER_AD_UNIT_ID: ${{ vars.ADMOB_BANNER_AD_UNIT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "name=${{ inputs.version_name }}" >> "$GITHUB_OUTPUT"
+            echo "code=${{ inputs.version_code }}" >> "$GITHUB_OUTPUT"
+          else
+            NAME="${GITHUB_REF_NAME#v}"
+            CODE="${{ github.run_number }}"
+            echo "name=$NAME" >> "$GITHUB_OUTPUT"
+            echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Release-readiness policy gate
+        run: bash scripts/release-readiness.sh
+
+      - name: Recreate signing keystore
+        shell: bash
+        run: |
+          test -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}"
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/release.jks"
+
+      - name: Build signed release APK and AAB
+        env:
+          ORG_GRADLE_PROJECT_releaseKeystorePath: ${{ runner.temp }}/release.jks
+          ORG_GRADLE_PROJECT_releaseKeystorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_releaseKeyAlias: ${{ secrets.KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_releaseKeyPassword: ${{ secrets.KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_admobAppId: ${{ vars.ADMOB_APP_ID }}
+          ORG_GRADLE_PROJECT_admobBannerAdUnitId: ${{ vars.ADMOB_BANNER_AD_UNIT_ID }}
+          ORG_GRADLE_PROJECT_versionName: ${{ steps.version.outputs.name }}
+          ORG_GRADLE_PROJECT_versionCode: ${{ steps.version.outputs.code }}
+        run: gradle testReleaseUnitTest lintRelease assembleRelease bundleRelease --stacktrace
+
+      - name: Upload signed release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-${{ steps.version.outputs.name }}
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+            app/build/outputs/mapping/release/mapping.txt
+          retention-days: 30
+          if-no-files-found: error
