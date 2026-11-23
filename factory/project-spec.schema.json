@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Android AI Factory project specification",
+  "type": "object",
+  "required": ["schema_version","factory","product","android","monetization","privacy","quality","publishing"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "factory": {
+      "type":"object",
+      "required":["template_mode","autonomous_development","require_pull_requests"],
+      "properties":{
+        "template_mode":{"type":"boolean"},
+        "autonomous_development":{"type":"boolean"},
+        "require_pull_requests":{"type":"boolean"}
+      }
+    },
+    "product": {
+      "type":"object",
+      "required":["name","package_name","languages"],
+      "properties":{
+        "name":{"type":"string","minLength":2},
+        "package_name":{"type":"string","pattern":"^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*){1,}$"},
+        "languages":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string"}}
+      }
+    },
+    "android": {
+      "type":"object",
+      "required":["min_sdk","target_sdk","compile_sdk","ui","language"],
+      "properties":{
+        "min_sdk":{"type":"integer","minimum":24},
+        "target_sdk":{"type":"integer","minimum":36},
+        "compile_sdk":{"type":"integer","minimum":36},
+        "ui":{"const":"jetpack-compose"},
+        "language":{"const":"kotlin"}
+      }
+    },
+    "monetization":{"type":"object","required":["ads","premium"]},
+    "privacy":{"type":"object","required":["children_directed","privacy_policy_file","data_safety_file"]},
+    "quality":{"type":"object"},
+    "publishing":{"type":"object","required":["google_play"]}
+  }
+}
