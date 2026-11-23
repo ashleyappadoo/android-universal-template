@@ -1,124 +1,81 @@
-# Universal Android GitHub Template
+# Android AI Factory v2
 
-Production-oriented Android starter designed to keep the development and release pipeline in GitHub:
+An agent-first Android repository that turns a product brief into a verifiable application and carries it through CI, signed APK/AAB generation, Google Play Internal Testing, and a protected staged Production rollout.
 
-- Kotlin + Jetpack Compose
-- `compileSdk 36` / `targetSdk 36`
-- GitHub Actions CI
-- Debug APK artifact on every CI run
-- Signed release APK + AAB
-- Google Play **internal track** publishing workflow
-- Google Mobile Ads **Next-Gen** scaffolding
-- UMP privacy/consent flow
-- `app-ads.txt` template
-- Release-readiness policy gate
-- Google Play Data Safety / privacy worksheets
+## Target workflow
 
-## 1. Create a new app from this source
-
-Run once after cloning:
-
-```bash
-./scripts/bootstrap.sh "My App" com.mycompany.myapp com/mycompany/myapp
+```text
+Cahier des charges
+        ↓
+Product agent
+        ↓
+project-spec.yaml + acceptance criteria
+        ↓
+Codex / developer agent
+        ↓
+branches + PRs + tests
+        ↓
+GitHub Actions
+        ↓
+APK debug / signed APK + AAB
+        ↓
+Google Play Internal
+        ↓
+human policy + release approval
+        ↓
+staged Production rollout
 ```
 
-Then replace the placeholder privacy/legal content and commit the result.
+The repository is the system of record. Agents do not rely on chat history to remember requirements.
 
-## 2. GitHub configuration
+## Agent-first files
+- `AGENTS.md` — short repository contract and review rules.
+- `project-spec.yaml` — machine-readable product/technical/privacy/publishing source of truth.
+- `factory/acceptance-criteria.yaml` — definition of done with evidence.
+- `PLANS.md` — active multi-phase execution plan.
+- `docs/FACTORY.md` — lifecycle and approval gates.
+- `.agents/skills/android-factory/SKILL.md` — reusable coding-agent workflow.
 
-### Repository variables
+## Instantiate a project
 
-Set under **Settings → Secrets and variables → Actions → Variables**:
+```bash
+pip install pyyaml jsonschema
+bash scripts/bootstrap.sh "My App" com.mycompany.myapp com/mycompany/myapp
+```
 
-- `ANDROID_APPLICATION_ID` — e.g. `com.mycompany.myapp`
-- `ADMOB_APP_ID` — production AdMob App ID (`ca-app-pub-…~…`)
-- `ADMOB_BANNER_AD_UNIT_ID` — production banner ad-unit ID (`ca-app-pub-…/…`)
+Then complete `project-spec.yaml`, replace policy/store placeholders and adapt acceptance criteria to the actual cahier des charges.
 
-AdMob IDs are identifiers rather than passwords, but keeping environment-specific values in GitHub Variables prevents accidental reuse between apps.
+Validate:
 
-### Repository / environment secrets
+```bash
+python scripts/validate-project-spec.py
+python scripts/factory-gate.py --stage ci
+```
 
+## Automated gates
+Every PR/push to `main` validates the factory contract, runs unit tests + lint, builds an APK and uploads it as an artifact.
+
+`android-release.yml` produces signed APK/AAB only after the strict release gate passes.
+
+`google-play-internal.yml` publishes to Internal Testing.
+
+`google-play-production.yml` performs a staged Production rollout through the protected GitHub Environment `google-play-production`.
+
+## GitHub Variables
+- `ANDROID_APPLICATION_ID`
+- `ADMOB_APP_ID`
+- `ADMOB_BANNER_AD_UNIT_ID`
+
+## GitHub Secrets
 - `ANDROID_KEYSTORE_BASE64`
 - `KEYSTORE_PASSWORD`
 - `KEY_ALIAS`
 - `KEY_PASSWORD`
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
 
-Never commit the keystore, passwords, or Play service-account JSON.
+Never commit these values.
 
-## 3. Workflows
+## Human gates retained by design
+The factory automates engineering and publishing mechanics, but keeps explicit approval for final privacy/Data Safety truthfulness, Play declarations, first-time account/console steps that require human action, and Production rollout.
 
-### `Android CI`
-Runs on PRs and pushes to `main`:
-
-1. unit tests
-2. lint
-3. debug APK build
-4. APK uploaded as a GitHub Actions artifact
-
-### `Android Release`
-Runs manually or from a semantic version tag (`v1.2.0`):
-
-1. release-readiness gate
-2. release tests + lint
-3. keystore reconstruction in the ephemeral runner
-4. signed APK
-5. signed AAB
-6. R8 mapping file
-7. GitHub artifact upload
-
-### `Publish Google Play Internal`
-Manual by design. It builds a signed AAB and uploads only to the Google Play **internal** track. Production promotion should remain a separate controlled step.
-
-> Google Play API automation normally requires that the application/package has already been created in Play Console and initially configured.
-
-## 4. AdMob / advertising readiness
-
-This template intentionally uses Google test advertising identifiers only for the **debug** build. A release requires production IDs through GitHub variables.
-
-The release gate checks that:
-
-- package ID and app name were customized
-- API 36 target is retained
-- privacy/Data Safety/AdMob release files are present
-- production AdMob identifiers have valid shapes
-- Google test IDs are not hardcoded into `src/main`
-
-The app requests UMP consent information on launch and initializes Mobile Ads only when `canRequestAds()` permits it.
-
-### `app-ads.txt`
-
-Edit `developer-site/app-ads.txt`, then publish it at the root of the exact developer-site domain referenced by Google Play:
-
-```text
-https://your-domain.example/app-ads.txt
-```
-
-Do not assume a GitHub Pages project subpath is equivalent to the root domain.
-
-## 5. Release gate locally
-
-```bash
-export ADMOB_APP_ID='ca-app-pub-1234567890123456~1234567890'
-export ADMOB_BANNER_AD_UNIT_ID='ca-app-pub-1234567890123456/1234567890'
-./scripts/release-readiness.sh
-```
-
-The first run is expected to fail until you customize the package, app name and policy documents.
-
-## 6. Build commands
-
-```bash
-gradle testDebugUnitTest lintDebug assembleDebug
-gradle bundleRelease
-```
-
-For release builds, Gradle properties are supplied by the workflow through `ORG_GRADLE_PROJECT_*` environment variables.
-
-## 7. Important policy boundary
-
-“Ad-ready” does not mean automatic AdMob approval. Google still validates app ownership/readiness and policy compliance. The final app, store listing, privacy policy, Data Safety answers, audience settings and ad placements must all match the actual release.
-
-## 8. Gradle execution model
-
-GitHub Actions installs the pinned Gradle `8.13` distribution with `gradle/actions/setup-gradle`, so APK/AAB builds do **not** depend on Android Studio or a developer workstation. If you want a local Gradle Wrapper later, generate and commit it with `gradle wrapper --gradle-version 8.13`.
+See `docs/FACTORY.md` for the lifecycle.
