@@ -1,0 +1,33 @@
+schema_version: 1
+
+criteria:
+  - id: PRODUCT-001
+    title: "Product specification is complete and internally consistent"
+    release_blocking: true
+    status: todo
+    evidence: []
+  - id: UX-001
+    title: "Primary user journey is implemented without dead-end navigation"
+    release_blocking: true
+    status: todo
+    evidence: []
+  - id: QA-001
+    title: "Unit tests and Android lint pass"
+    release_blocking: true
+    status: todo
+    evidence: []
+  - id: PRIVACY-001
+    title: "Privacy Policy and Data Safety match the final SDK/data inventory"
+    release_blocking: true
+    status: todo
+    evidence: []
+  - id: ADS-001
+    title: "AdMob release IDs and UMP consent gating are production-ready"
+    release_blocking: true
+    status: todo
+    evidence: []
+  - id: PLAY-001
+    title: "Store metadata, assets, declarations and release notes are ready"
+    release_blocking: true
+    status: todo
+    evidence: []

@@ -15,33 +15,32 @@ concurrency:
 jobs:
   test-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 35
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install factory validator dependencies
+        run: pip install 'pyyaml>=6,<7' 'jsonschema>=4,<5'
+      - name: Validate AI Factory contract
+        run: python scripts/factory-gate.py --stage ci
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
-
       - name: Set up Gradle 8.13
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-
       - name: Unit tests
         run: gradle testDebugUnitTest --stacktrace
-
       - name: Lint
         run: gradle lintDebug --stacktrace
-
       - name: Build debug APK
         run: gradle assembleDebug --stacktrace
-
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:

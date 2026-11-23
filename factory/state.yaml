@@ -1,0 +1,7 @@
+schema_version: 1
+phase: template
+last_successful_gate: bootstrap
+current_release_candidate: null
+blockers:
+  - "Instantiate the template with a real product specification."
+history: []

@@ -3,7 +3,6 @@ set -euo pipefail
 
 if [[ $# -ne 3 ]]; then
   echo "Usage: bash scripts/bootstrap.sh <AppName> <application.id> <package/path>"
-  echo "Example: bash scripts/bootstrap.sh Rituel com.example.rituel com/example/rituel"
   exit 1
 fi
 
@@ -28,4 +27,18 @@ cp -R "app/src/test/java/$OLD_PACKAGE_PATH/." "app/src/test/java/$PACKAGE_PATH/"
 find "app/src/main/java/$PACKAGE_PATH" "app/src/test/java/$PACKAGE_PATH" -type f -name '*.kt' -print0 | xargs -0 sed -i "s/com\.example\.universal/$APP_ID/g"
 rm -rf "app/src/main/java/$OLD_PACKAGE_PATH" "app/src/test/java/$OLD_PACKAGE_PATH"
 
+python - "$APP_NAME" "$APP_ID" <<'PY'
+import sys
+from pathlib import Path
+import yaml
+name, package = sys.argv[1], sys.argv[2]
+path = Path("project-spec.yaml")
+spec = yaml.safe_load(path.read_text(encoding="utf-8"))
+spec["factory"]["template_mode"] = False
+spec["product"]["name"] = name
+spec["product"]["package_name"] = package
+path.write_text(yaml.safe_dump(spec, sort_keys=False, allow_unicode=True), encoding="utf-8")
+PY
+
 echo "Bootstrapped $APP_NAME ($APP_ID)."
+echo "Complete the spec and acceptance criteria, then run the factory validators."

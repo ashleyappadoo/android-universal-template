@@ -1,0 +1,60 @@
+schema_version: 2
+
+factory:
+  template_mode: true
+  autonomous_development: true
+  require_pull_requests: true
+
+product:
+  name: "Universal Android App"
+  package_name: "com.example.universal"
+  category: "TOOLS"
+  audience: "General audience"
+  languages: [fr-FR, en-US]
+
+android:
+  min_sdk: 24
+  target_sdk: 36
+  compile_sdk: 36
+  ui: "jetpack-compose"
+  language: "kotlin"
+
+features:
+  authentication:
+    enabled: false
+    providers: []
+  notifications: false
+  analytics: false
+  crash_reporting: false
+  backend_required: false
+
+monetization:
+  ads:
+    enabled: true
+    provider: "admob"
+    consent_platform: "google-ump"
+  premium:
+    enabled: false
+    billing: "google-play-billing"
+
+privacy:
+  children_directed: false
+  privacy_policy_file: "policy/PRIVACY_POLICY.md"
+  data_safety_file: "policy/GOOGLE_PLAY_DATA_SAFETY.md"
+  app_ads_file: "developer-site/app-ads.txt"
+
+quality:
+  unit_tests_required: true
+  lint_required: true
+  acceptance_criteria_required: true
+  release_blockers_must_pass: true
+
+publishing:
+  google_play:
+    enabled: true
+    internal_track: "internal"
+    production:
+      enabled: true
+      protected_environment: "google-play-production"
+      default_rollout_fraction: 0.10
+      require_human_approval: true
