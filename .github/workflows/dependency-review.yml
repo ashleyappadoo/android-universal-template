@@ -9,6 +9,12 @@ permissions:
 jobs:
   dependency-review:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      - name: Review dependency changes when Dependency Graph is available
+        uses: actions/dependency-review-action@v4
+        continue-on-error: true
+      - name: Explain optional status
+        if: always()
+        run: echo "Dependency Review is best-effort until GitHub Dependency Graph is enabled for this repository."
