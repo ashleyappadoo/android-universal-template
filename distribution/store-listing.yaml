@@ -1,0 +1,21 @@
+schema_version: 1
+locales:
+  en-US:
+    title: "TODO_APP_NAME"
+    short_description: "TODO_SHORT_DESCRIPTION"
+    full_description: "TODO_FULL_DESCRIPTION"
+  fr-FR:
+    title: "TODO_APP_NAME"
+    short_description: "TODO_SHORT_DESCRIPTION"
+    full_description: "TODO_FULL_DESCRIPTION"
+
+assets:
+  icon: "TODO_PLAY_ICON_512"
+  feature_graphic: "TODO_FEATURE_GRAPHIC_1024x500"
+  phone_screenshots: "TODO_SCREENSHOTS"
+
+declarations:
+  ads: true
+  target_audience_reviewed: false
+  data_safety_reviewed: false
+  content_rating_reviewed: false
